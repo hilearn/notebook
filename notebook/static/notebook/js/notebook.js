@@ -640,12 +640,28 @@ define([
     Notebook.prototype.get_next_cell = function (cell) {
         var result = null;
         var index = this.find_cell_index(cell);
-        if (this.is_valid_cell_index(index+1)) {
-            result = this.get_cell(index+1);
+        while (result === null || this.is_cell_hidden(result)) {
+            ++index;
+            if (!this.is_valid_cell_index(index)) {
+                return null;
+            } 
+            result = this.get_cell(index);
         }
         return result;
     };
-    
+
+    Notebook.prototype.get_next_cell_index = function (index) {
+        var result = null;
+        while (result === null || this.is_cell_hidden(result)) {
+            ++index;
+            if (!this.is_valid_cell_index(index)) {
+                return null;
+            } 
+            result = this.get_cell(index);
+        }
+        return index;
+    };
+
     /**
      * Toggles the display of line numbers in all cells.
      */
@@ -683,10 +699,24 @@ define([
     Notebook.prototype.get_prev_cell = function (cell) {
         var result = null;
         var index = this.find_cell_index(cell);
-        if (index !== null && index > 0) {
-            result = this.get_cell(index-1);
+        while(result === null || this.is_cell_hidden(result)) {
+            --index;
+            if (this.is_valid_cell_index(index)) {
+                result = this.get_cell(index);
+            }
         }
         return result;
+    };
+
+    Notebook.prototype.get_prev_cell_index = function (index) {
+        var result = null;
+        while(result === null || this.is_cell_hidden(result)) {
+            --index;
+            if (this.is_valid_cell_index(index)) {
+                result = this.get_cell(index);
+            }
+        }
+        return index;
     };
     
     /**
@@ -893,7 +923,7 @@ define([
      */
     Notebook.prototype.select_next = function (moveanchor) {
         var index = this.get_selected_index();
-        this.select(index+1, moveanchor);
+        this.select(this.get_next_cell_index(index), moveanchor);
         return this;
     };
 
@@ -904,7 +934,7 @@ define([
      */
     Notebook.prototype.select_prev = function (moveanchor) {
         var index = this.get_selected_index();
-        this.select(index-1, moveanchor);
+        this.select(this.get_prev_cell_index(index), moveanchor);
         return this;
     };
 
@@ -2288,7 +2318,7 @@ define([
                 "Restart and Run All Cells" : {
                     "class" : "btn-danger",
                     "click" : function () {
-                        that.execute_all_cells();
+                        that.execute_all_cells((options || {}).visible);
                     },
                 },
             }
@@ -2456,12 +2486,22 @@ define([
 
     Notebook.prototype.reset_code_types = function () {
         var that = this;
-        this.code_types = ["main", "data", "debug"];
+        var code_types = ["main", "data", "debug"];
+
+        var sheet = $("#style-hide-code-type").get(0).sheet;
+        var lenght = sheet.cssRules.length;
+        for (var i = 0; i < lenght; i++) {
+            sheet.deleteRule(0);
+        }
+        code_types.forEach(function (code_type) {
+            var rule = '.hidden-' + code_type + ' div.cell.' + code_type + ' { display: none; }';
+            sheet.insertRule(rule);
+        });
 
         var code_types_submenu = $("#menu-code-type-submenu");
         var hide_cells = $("#menu-hide-cells-submenu");
         code_types_submenu.empty();
-        this.code_types.forEach(function (code_type) {
+        code_types.forEach(function (code_type) {
             code_types_submenu.append(
                 $("<li>").attr("id", "code-type-submenu-" + code_type).append(
                     $('<a>')
@@ -2474,15 +2514,22 @@ define([
             );
         });
         hide_cells.empty();
-        this.code_types.forEach(function (code_type) {
+        code_types.forEach(function (code_type) {
             hide_cells.append(
                 $("<li>").attr("id", "code-type-submenu-" + code_type).append(
                     $('<a>')
-                        .attr('href', '#')
+                        .text(code_type)
+                        .prepend(
+                            $('<input>')
+                                .attr('type', 'checkbox')
+                                .attr('href', '#')
+
+                                .prop("checked", that.element.hasClass("hidden-" + code_type))
+                        )
                         .click( function () {
                             that.hide_unhide_cells(code_type);
+                            this.children[0].checked = that.element.hasClass("hidden-" + code_type);
                         })
-                        .text(code_type)
                 )
             );
         });
@@ -2519,15 +2566,42 @@ define([
     /**
      * Hide all debug cells in the notebook.
      */
-    Notebook.prototype.hide_unhide_cells = function (code_type) {
+    Notebook.prototype.hide_unhide_cells = function (code_type, hide) {
         var cls_type = "hidden-" + code_type;
-        console.log(cls_type);
-        if (this.element.hasClass(cls_type)) {
-            this.element.removeClass(cls_type);
+        
+        if (hide === undefined) {
+            if (this.element.hasClass(cls_type)) {
+                this.element.removeClass(cls_type);
+            } else {
+                this.element.addClass(cls_type);
+            }
         } else {
-            this.element.addClass(cls_type);
+            if (hide) {
+                if (!this.element.hasClass(cls_type)) {
+                    this.element.addClass(cls_type);
+                }
+            } else {
+                if (this.element.hasClass(cls_type)) {
+                    this.element.removeClass(cls_type);
+                }
+            }
         }
     };
+
+    Notebook.prototype.delete_hidden_cells = function () {
+        var that = this;
+        var indices = [];
+        this.get_cells().forEach(function (cell, i) {
+            if (that.is_cell_hidden(cell)) {
+                indices.push(i);
+            }
+        });
+        this.delete_cells(indices);
+    }
+
+    Notebook.prototype.is_cell_hidden = function (cell) {
+        return this.element.hasClass("hidden-" + cell.metadata.code_type);
+    }
 
     /**
      * Execute or render cell outputs and go into command mode.
@@ -2631,8 +2705,8 @@ define([
     /**
      * Execute all cells.
      */
-    Notebook.prototype.execute_all_cells = function () {
-        this.execute_cell_range(0, this.ncells());
+    Notebook.prototype.execute_all_cells = function (visible) {
+        this.execute_cell_range(0, this.ncells(), visible);
         this.scroll_to_bottom();
     };
 
@@ -2642,11 +2716,13 @@ define([
      * @param {integer} start - index of the first cell to execute (inclusive)
      * @param {integer} end - index of the last cell to execute (exclusive)
      */
-    Notebook.prototype.execute_cell_range = function (start, end) {
+    Notebook.prototype.execute_cell_range = function (start, end, visible) {
         this.command_mode();
         var indices = [];
         for (var i=start; i<end; i++) {
-            indices.push(i);
+            if (visible !== true || visible === true && !this.is_cell_hidden(this.get_cell(i))) {
+                indices.push(i);
+            }
         }
         this.execute_cells(indices);
     };

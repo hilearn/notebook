@@ -73,6 +73,8 @@ define([
                 if (that.celltoolbar) {
                     that.celltoolbar.rebuild();
                 }
+                if (that._metadata.code_type !== undefined)
+                    that.set_code_type(that._metadata.code_type);
             }
         });
 
@@ -126,7 +128,9 @@ define([
             this.init_classes();
         }
 
-        this.code_type = 'main';
+        if (this.code_type === undefined) {
+            this.set_code_type('main');
+        }
     };
 
     Cell.options_default = {
@@ -327,9 +331,9 @@ define([
      * Set the code type
      * @method set_code_type
      */
-    Cell.prototype.set_code_type = function (code_type, cls) {
-        this.element.removeClass(code_type);
-        this.code_type = code_type;
+    Cell.prototype.set_code_type = function (code_type) {
+        this.element.removeClass(this.metadata.code_type);
+        this.metadata.code_type = code_type;
         this.element.addClass(code_type);
     };
     

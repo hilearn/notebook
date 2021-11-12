@@ -20,6 +20,7 @@ window.mathjax_url = "{{mathjax_url}}";
 
 <link rel="stylesheet" href="{{ static_url("notebook/css/override.css") }}" type="text/css" />
 <link rel="stylesheet" href=""  id='kernel-css'                             type="text/css" />
+<style id="style-hide-code-type">  </style>
 
 {% endblock %}
 
@@ -199,7 +200,7 @@ data-notebook-path="{{notebook_path | urlencode}}"
                             <ul class="dropdown-menu" id="menu-code-type-submenu">
                             </ul>
                         </li>
-                        <li id="hide_unhide_debug_cells" class="menu_focus_highlight dropdown-submenu" role="none"
+                        <li id="hide_unhide_cells" class="menu_focus_highlight dropdown-submenu" role="none"
                             title="{% trans %}Hide/Unhide debug cells{% endtrans %}">
                             <a href="#" role="menuitem" aria-haspopup="true" aria-expanded="false" class="dropdown-toggle" data-toggle="dropdown">{% trans %}Hide/Unhide debug cells{% endtrans %}</a>
                             <ul class="dropdown-menu" id="menu-hide-cells-submenu">
@@ -217,6 +218,8 @@ data-notebook-path="{{notebook_path | urlencode}}"
                             <a href="#" role="menuitem">{% trans %}Run All Above{% endtrans %}</a></li>
                         <li id="run_all_cells_below" role="none" title="{% trans %}Run this cell and all cells below it{% endtrans %}">
                             <a href="#" role="menuitem">{% trans %}Run All Below{% endtrans %}</a></li>
+                        <li id="remove_hidden_cells" role="none" title="{% trans %}Delete all hidden cells{% endtrans %}">
+                            <a href="#" role="menuitem">{% trans %}Delete hidden cells{% endtrans %}</a></li>
                         <li class="divider" role="none"></li>
                         <li id="change_cell_type" class="menu_focus_highlight dropdown-submenu" role="none"
                             title="{% trans %}All cells in the notebook have a cell type. By default, new cells are created as 'Code' cells{% endtrans %}">
@@ -285,6 +288,10 @@ data-notebook-path="{{notebook_path | urlencode}}"
                         <li id="restart_run_all"
                             title="{% trans %}Restart the Kernel and re-run the notebook{% endtrans %}">
                             <a href="#">{% trans %}Restart &amp; Run All{% endtrans %}</a>
+                        </li>
+                        <li id="restart_run_all_visible"
+                            title="{% trans %}Restart the Kernel and re-run the visible notebook{% endtrans %}">
+                            <a href="#">{% trans %}Restart &amp; Run All Visible Cells{% endtrans %}</a>
                         </li>
                         <li id="reconnect_kernel"
                             title="{% trans %}Reconnect to the Kernel{% endtrans %}">
