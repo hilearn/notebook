@@ -61,7 +61,6 @@ define([
         this.selected = false;
         this.anchor = false;
         this.rendered = false;
-        this.debug = false;
         this.mode = 'command';
 
         // Metadata property
@@ -74,6 +73,8 @@ define([
                 if (that.celltoolbar) {
                     that.celltoolbar.rebuild();
                 }
+                if (that._metadata.code_type !== undefined)
+                    that.set_code_type(that._metadata.code_type);
             }
         });
 
@@ -126,6 +127,10 @@ define([
             this.bind_events();
             this.init_classes();
         }
+
+        if (this.code_type === undefined) {
+            this.set_code_type('main');
+        }
     };
 
     Cell.options_default = {
@@ -176,23 +181,6 @@ define([
         } else {
             this.element.addClass('unrendered');
         }
-    };
-
-    // make or unmake the cell a debug cell
-    Cell.prototype.make_debug = function () {
-        if (this.debug === true) {
-            return;
-        }
-        this.debug = true;
-        this.element.addClass('debug');
-    };
-
-    Cell.prototype.unmake_debug = function () {
-        if (this.debug !== true) {
-            return;
-        }
-        this.debug = false;
-        this.element.removeClass('debug');
     };
 
     /**
@@ -337,6 +325,16 @@ define([
         } else {
             return false;
         }
+    };
+
+    /**
+     * Set the code type
+     * @method set_code_type
+     */
+    Cell.prototype.set_code_type = function (code_type) {
+        this.element.removeClass(this.metadata.code_type);
+        this.metadata.code_type = code_type;
+        this.element.addClass(code_type);
     };
     
 

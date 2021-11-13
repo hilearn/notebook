@@ -142,6 +142,14 @@ define([
                 env.notebook.restart_run_all();
             }
         },
+        'confirm-restart-kernel-and-run-visible-cells': {
+            icon: 'fa-forward',
+            cmd: i18n.msg._('confirm restart kernel and run all cells'),
+            help: i18n.msg._('restart the kernel, then re-run the whole notebook (with dialog)'),
+            handler: function (env) {
+                env.notebook.restart_run_all({visible: true});
+            }
+        },
         'restart-kernel-and-clear-output': {
             cmd: i18n.msg._('restart kernel and clear output'),
             help: i18n.msg._('restart the kernel and clear all output (no confirmation dialog)'),
@@ -174,20 +182,12 @@ define([
                 env.notebook.execute_cell_and_select_below();
             }
         },
-        'debug-cell':{
-            cmd: i18n.msg._('debug selected cells'),
-            help    : i18n.msg._('debug selected cells'),
+        'remove-hidden-cells':{
+            cmd: i18n.msg._('Delete hidden cells'),
+            help    : i18n.msg._('Delete hidden cells'),
             help_index : 'ug',
             handler : function (env) {
-                env.notebook.debug_selected_cells();
-            }
-        },
-        'hide-unhide-debug-cells':{
-            cmd: i18n.msg._('hide/unhide debug cells'),
-            help    : i18n.msg._('hide/unhide debug cells'),
-            help_index : 'ug',
-            handler : function (env) {
-                env.notebook.hide_unhide_debug_cells();
+                env.notebook.delete_hidden_cells();
             }
         },
         'run-cell':{
